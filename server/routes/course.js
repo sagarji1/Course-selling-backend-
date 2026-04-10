@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const courseRouter = Router();
-const { courseModel } = require("../db");
+const courseModel = require("../models/course.model");
 
 courseRouter.get("/allCourses", async (req, res) => {
   try {

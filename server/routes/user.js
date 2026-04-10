@@ -1,6 +1,8 @@
 const { Router } = require("express");
 const userRouter = Router();
-const { UserModel, courseModel } = require("../db");
+const UserModel = require("../models/user.model");
+const courseModel = require("../models/course.model");
+const { userAuth: auth } = require("../middlewares/auth.middleware");
 const jwt = require("jsonwebtoken");
 const course = require("./course");
 const z = require("zod");
@@ -82,28 +84,7 @@ userRouter.post("/signin", async (req, res) => {
   }
 });
 
-function auth(req, res, next) {
-  try {
-    const authHeader = req.headers["authorization"];
-    if (!authHeader) {
-      return res.status(401).json({ msg: "No token provided" });
-    }
-    const token = authHeader.split(" ")[1];
-    if (!token) {
-      return res.status(401).json({ msg: "Invalid token format",token :token});
-    }
-    const person = jwt.verify(token, process.env.jwtsecretkey);
-    if (!person) {
-      return res.status(401).json({ msg: "invalid user" });
-    }
-    if (person) {
-      req.userId = person.id;
-      next();
-    }
-  } catch (err) {
-    res.status(401).json({ msg: "you have not signedin, please signedin" });
-  }
-}
+
 
 userRouter.post("/purchase/:courseId", auth, async (req, res) => {
   const courseId = req.params.courseId;
@@ -112,15 +93,15 @@ userRouter.post("/purchase/:courseId", auth, async (req, res) => {
     return res.status(400).json({ msg: "course not found " });
   }
   const user = await UserModel.findByIdAndUpdate(
-    req.userId,  
+    req.userId,
     {
       $addToSet: { purchasedCourses: courseId },
     },
     { new: true }
   ).populate("purchasedCourses")
   return res.status(200).json({
-    msg:"course purchased successfully",
-    purchasedCourses:user.purchasedCourses,
+    msg: "course purchased successfully",
+    purchasedCourses: user.purchasedCourses,
   })
 });
 
